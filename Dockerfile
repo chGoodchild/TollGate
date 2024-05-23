@@ -1,10 +1,23 @@
-FROM scratch
+FROM openwrt/rootfs:21.02.1
+# FROM openwrt/rootfs:latest
 
-# Add the OpenWRT root filesystem
+# Install necessary tools and dependencies
+RUN apt-get install -y opkg
+
+# Download and add the OpenWRT root filesystem
+RUN wget https://downloads.openwrt.org/releases/22.03.4/targets/armvirt/64/openwrt-22.03.4-armvirt-64-default-rootfs.tar.gz -O rootfs.tar.gz
 ADD rootfs.tar.gz /
 
 # Create necessary directories
-# RUN sudo mkdir -p /var/lock
+RUN mkdir -p /var/lock
+
+# Remove unnecessary packages
+RUN opkg remove --force-depends dnsmasq* wpad* iw* && \
+    opkg update && \
+    opkg install luci wpad-wolfssl iw-full ip-full kmod-mac80211 dnsmasq-full iptables-mod-checksum
+
+# Upgrade all packages
+RUN opkg list-upgradable | awk '{print $1}' | xargs opkg upgrade || true
 
 # Add custom iptables rule
 RUN echo "iptables -A POSTROUTING -t mangle -p udp --dport 68 -j CHECKSUM --checksum-fill" >> /etc/firewall.user
