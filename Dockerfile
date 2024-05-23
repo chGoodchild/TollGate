@@ -1,13 +1,10 @@
-FROM alpine:latest
+FROM scratch
 
-# Download the OpenWRT root filesystem
-RUN wget https://downloads.openwrt.org/releases/22.03.4/targets/armvirt/64/openwrt-22.03.4-armvirt-64-default-rootfs.tar.gz -O /tmp/rootfs.tar.gz
-
-# Switch to the OpenWRT root filesystem
-ADD /tmp/rootfs.tar.gz /
+# Add the OpenWRT root filesystem
+ADD rootfs.tar.gz /
 
 # Create necessary directories
-RUN mkdir -p /var/lock
+# RUN sudo mkdir -p /var/lock
 
 # Add custom iptables rule
 RUN echo "iptables -A POSTROUTING -t mangle -p udp --dport 68 -j CHECKSUM --checksum-fill" >> /etc/firewall.user
@@ -24,3 +21,4 @@ LABEL org.opencontainers.image.source=https://github.com/oofnikj/docker-openwrt
 
 # Command to run the container
 CMD [ "/sbin/init" ]
+
