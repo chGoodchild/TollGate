@@ -1,29 +1,16 @@
-FROM openwrt/rootfs:21.02.1
-# FROM openwrt/rootfs:latest
-
-# Install necessary tools and dependencies
-RUN apt-get install -y opkg
-
-# Download and add the OpenWRT root filesystem
-RUN wget https://downloads.openwrt.org/releases/22.03.4/targets/armvirt/64/openwrt-22.03.4-armvirt-64-default-rootfs.tar.gz -O rootfs.tar.gz
-ADD rootfs.tar.gz /
+FROM ghcr.io/hurt/openwrt-rpi:21.02.1
+# FROM openwrt/rootfs:21.02.1
 
 # Create necessary directories
-RUN mkdir -p /var/lock
+RUN mkdir -p /var/lock /etc
 
-# Remove unnecessary packages
-RUN opkg remove --force-depends dnsmasq* wpad* iw* && \
-    opkg update && \
-    opkg install luci wpad-wolfssl iw-full ip-full kmod-mac80211 dnsmasq-full iptables-mod-checksum
-
-# Upgrade all packages
-RUN opkg list-upgradable | awk '{print $1}' | xargs opkg upgrade || true
-
-# Add custom iptables rule
-RUN echo "iptables -A POSTROUTING -t mangle -p udp --dport 68 -j CHECKSUM --checksum-fill" >> /etc/firewall.user
+# Ensure /etc/firewall.user exists and add custom iptables rule
+RUN touch /etc/firewall.user && \
+    echo "iptables -A POSTROUTING -t mangle -p udp --dport 68 -j CHECKSUM --checksum-fill" >> /etc/firewall.user
 
 # Modify /etc/rc.local
-RUN sed -i '/^exit 0/i cat \/tmp\/resolv.conf > \/etc\/resolv.conf' /etc/rc.local
+RUN touch /etc/rc.local && \
+    sed -i '/^exit 0/i cat \/tmp\/resolv.conf > \/etc\/resolv.conf' /etc/rc.local
 
 # Set metadata
 ARG ts
